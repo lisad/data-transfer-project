@@ -29,7 +29,7 @@ Ideally, a Vertical will have a small number of well-defined and widely-adopted 
 
 One goal of DTP is to encourage organizations to use common Data Models in their systems, which will happen if organizations take importing and exporting data into consideration when initially designing their systems or providing updates. Using a common Data Model will significantly reduce the need for companies to maintain and update proprietary APIs.
 
-See [current data models](https://github.com/google/data-transfer-project/tree/master/portability-types-transfer/src/main/java/org/datatransferproject/types/transfer/models).
+See [current data models](https://github.com/google/data-transfer-project/tree/master/portability-types-common/src/main/java/org/datatransferproject/types/common/models).
 
 ### Company Specific Adapters
 
