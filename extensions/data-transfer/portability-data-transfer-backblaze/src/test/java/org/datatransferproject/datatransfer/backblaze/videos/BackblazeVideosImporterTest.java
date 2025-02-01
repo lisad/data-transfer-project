@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.datatransferproject.api.launcher.Monitor;
+import org.datatransferproject.datatransfer.backblaze.common.BackblazeConstants;
 import org.datatransferproject.datatransfer.backblaze.common.BackblazeDataTransferClient;
 import org.datatransferproject.datatransfer.backblaze.common.BackblazeDataTransferClientFactory;
 import org.datatransferproject.spi.cloud.connection.ConnectionProvider;
@@ -40,11 +41,13 @@ import org.datatransferproject.spi.transfer.provider.ImportResult;
 import org.datatransferproject.types.common.models.videos.VideoModel;
 import org.datatransferproject.types.common.models.videos.VideosContainerResource;
 import org.datatransferproject.types.transfer.auth.TokenSecretAuthData;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BackblazeVideosImporterTest {
 
   Monitor monitor;
@@ -54,9 +57,11 @@ public class BackblazeVideosImporterTest {
   IdempotentImportExecutor executor;
   TokenSecretAuthData authData;
   BackblazeDataTransferClient client;
+  BackblazeDataTransferClientFactory b2ClientFactory;
+  BackblazeVideosImporter videosImporter;
   @TempDir public Path folder;
 
-  @BeforeEach
+  @BeforeAll
   public void setUp() {
     monitor = mock(Monitor.class);
     dataStore = mock(TemporaryPerJobDataStore.class);
@@ -65,13 +70,13 @@ public class BackblazeVideosImporterTest {
     executor = mock(IdempotentImportExecutor.class);
     authData = mock(TokenSecretAuthData.class);
     client = mock(BackblazeDataTransferClient.class);
+    videosImporter = new BackblazeVideosImporter(monitor, dataStore, streamProvider, clientFactory,
+            BackblazeConstants.VIDEOS_BASE_FOLDER_NAME);
   }
 
   @Test
   public void testNullData() throws Exception {
-    BackblazeVideosImporter sut =
-        new BackblazeVideosImporter(monitor, dataStore, streamProvider, clientFactory);
-    ImportResult result = sut.importItem(UUID.randomUUID(), executor, authData, null);
+    ImportResult result = videosImporter.importItem(UUID.randomUUID(), executor, authData, null);
     assertEquals(ImportResult.OK, result);
   }
 
@@ -80,9 +85,7 @@ public class BackblazeVideosImporterTest {
     VideosContainerResource data = mock(VideosContainerResource.class);
     when(data.getVideos()).thenReturn(null);
 
-    BackblazeVideosImporter sut =
-        new BackblazeVideosImporter(monitor, dataStore, streamProvider, clientFactory);
-    ImportResult result = sut.importItem(UUID.randomUUID(), executor, authData, data);
+    ImportResult result = videosImporter.importItem(UUID.randomUUID(), executor, authData, data);
     assertEquals(ImportResult.ResultType.OK, result.getType());
   }
 
@@ -91,9 +94,7 @@ public class BackblazeVideosImporterTest {
     VideosContainerResource data = mock(VideosContainerResource.class);
     when(data.getVideos()).thenReturn(new ArrayList<>());
 
-    BackblazeVideosImporter sut =
-        new BackblazeVideosImporter(monitor, dataStore, streamProvider, clientFactory);
-    ImportResult result = sut.importItem(UUID.randomUUID(), executor, authData, data);
+    ImportResult result = videosImporter.importItem(UUID.randomUUID(), executor, authData, data);
     assertEquals(ImportResult.ResultType.OK, result.getType());
   }
 
@@ -122,12 +123,10 @@ public class BackblazeVideosImporterTest {
         .thenReturn(new InputStreamWrapper(IOUtils.toInputStream("video content", "UTF-8")));
 
     when(dataStore.getTempFileFromInputStream(any(), any(), any())).thenReturn(folder.toFile());
-    when(client.uploadFile(eq("Video Transfer/dataId.mp4"), any())).thenReturn(response);
+    when(client.uploadFile(eq("Video Transfer/dataId.mp4"), any(), any())).thenReturn(response);
     when(clientFactory.getOrCreateB2Client(jobId, authData)).thenReturn(client);
 
-    BackblazeVideosImporter sut =
-        new BackblazeVideosImporter(monitor, dataStore, streamProvider, clientFactory);
-    sut.importItem(jobId, executor, authData, data);
+    videosImporter.importItem(jobId, executor, authData, data);
 
     ArgumentCaptor<ImportFunction<VideoModel, String>> importCapture =
         ArgumentCaptor.forClass(ImportFunction.class);

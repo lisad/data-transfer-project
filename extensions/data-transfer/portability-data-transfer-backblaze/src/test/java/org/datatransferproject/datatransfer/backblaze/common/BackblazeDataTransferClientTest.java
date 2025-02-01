@@ -28,6 +28,10 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 import org.datatransferproject.api.launcher.Monitor;
 import org.datatransferproject.datatransfer.backblaze.exception.BackblazeCredentialsException;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,6 +67,7 @@ public class BackblazeDataTransferClientTest {
   @Mock
   private S3Client s3Client;
   private static File testFile;
+  private static Date testUploadedDate = new GregorianCalendar(2023, Calendar.FEBRUARY,23, 15, 0).getTime();
   private static final String KEY_ID = "keyId";
   private static final String APP_KEY = "appKey";
   private static final String EXPORT_SERVICE = "exp-serv";
@@ -156,7 +161,7 @@ public class BackblazeDataTransferClientTest {
   public void testUploadFileNonInitialized() throws IOException {
     BackblazeDataTransferClient client = createDefaultClient();
     assertThrows(IllegalStateException.class, () -> {
-      client.uploadFile(FILE_KEY, testFile);
+      client.uploadFile(FILE_KEY, testFile, testUploadedDate);
     });
   }
 
@@ -168,7 +173,8 @@ public class BackblazeDataTransferClientTest {
         .thenReturn(PutObjectResponse.builder().versionId(expectedVersionId).build());
     BackblazeDataTransferClient client = createDefaultClient();
     client.init(KEY_ID, APP_KEY, EXPORT_SERVICE);
-    String actualVersionId = client.uploadFile(FILE_KEY, testFile);
+    String actualVersionId = client.uploadFile(FILE_KEY, testFile,
+            new GregorianCalendar(2023, Calendar.FEBRUARY,23, 15, 0).getTime());
     verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     assertEquals(expectedVersionId, actualVersionId);
   }
@@ -181,7 +187,7 @@ public class BackblazeDataTransferClientTest {
     BackblazeDataTransferClient client = createDefaultClient();
     client.init(KEY_ID, APP_KEY, EXPORT_SERVICE);
     assertThrows(IOException.class, () -> {
-      client.uploadFile(FILE_KEY, testFile);
+      client.uploadFile(FILE_KEY, testFile, testUploadedDate);
     });
   }
 
@@ -201,7 +207,7 @@ public class BackblazeDataTransferClientTest {
     BackblazeDataTransferClient client =
         new BackblazeDataTransferClient(monitor, backblazeS3ClientFactory, fileSize / 2, partSize);
     client.init(KEY_ID, APP_KEY, EXPORT_SERVICE);
-    String actualVersionId = client.uploadFile(FILE_KEY, testFile);
+    String actualVersionId = client.uploadFile(FILE_KEY, testFile, testUploadedDate);
     verify(s3Client, times((int) expectedParts))
         .uploadPart(any(UploadPartRequest.class), any(RequestBody.class));
     assertEquals(expectedVersionId, actualVersionId);
@@ -220,7 +226,7 @@ public class BackblazeDataTransferClientTest {
             fileSize / 8);
     client.init(KEY_ID, APP_KEY, EXPORT_SERVICE);
     assertThrows(IOException.class, () -> {
-      client.uploadFile(FILE_KEY, testFile);
+      client.uploadFile(FILE_KEY, testFile, testUploadedDate);
     });
   }
 }

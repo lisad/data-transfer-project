@@ -46,15 +46,19 @@ public class BackblazeVideosImporter
   private final Monitor monitor;
   private final BackblazeDataTransferClientFactory b2ClientFactory;
 
+  private final String baseFolderName;
+
   public BackblazeVideosImporter(
       Monitor monitor,
       TemporaryPerJobDataStore jobStore,
       ConnectionProvider connectionProvider,
-      BackblazeDataTransferClientFactory b2ClientFactory) {
+      BackblazeDataTransferClientFactory b2ClientFactory,
+      String baseFolderName) {
     this.monitor = monitor;
     this.jobStore = jobStore;
     this.connectionProvider = connectionProvider;
     this.b2ClientFactory = b2ClientFactory;
+    this.baseFolderName = baseFolderName;
   }
 
   @Override
@@ -96,7 +100,7 @@ public class BackblazeVideosImporter
       File file = jobStore.getTempFileFromInputStream(videoFileStream, video.getDataId(), ".mp4");
       String res =
           b2Client.uploadFile(
-              String.format("%s/%s.mp4", VIDEO_TRANSFER_MAIN_FOLDER, video.getDataId()), file);
+              String.format("%s/%s", baseFolderName, video.getName()), file, video.getUploadedTime());
       return ItemImportResult.success(res, file.length());
     } catch (FileNotFoundException e) {
       monitor.info(

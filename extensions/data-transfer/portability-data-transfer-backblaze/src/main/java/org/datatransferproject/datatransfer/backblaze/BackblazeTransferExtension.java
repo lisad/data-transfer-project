@@ -16,24 +16,25 @@
 
 package org.datatransferproject.datatransfer.backblaze;
 
-import static org.datatransferproject.types.common.models.DataVertical.PHOTOS;
-import static org.datatransferproject.types.common.models.DataVertical.VIDEOS;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import org.datatransferproject.api.launcher.ExtensionContext;
 import org.datatransferproject.api.launcher.Monitor;
+import org.datatransferproject.datatransfer.backblaze.common.BackblazeConstants;
 import org.datatransferproject.datatransfer.backblaze.common.BackblazeDataTransferClientFactory;
 import org.datatransferproject.datatransfer.backblaze.photos.BackblazePhotosImporter;
 import org.datatransferproject.datatransfer.backblaze.videos.BackblazeVideosImporter;
 import org.datatransferproject.spi.cloud.connection.ConnectionProvider;
 import org.datatransferproject.spi.cloud.storage.TemporaryPerJobDataStore;
+import org.datatransferproject.spi.transfer.provider.converter.MediaImporterDecorator;
 import org.datatransferproject.types.common.models.DataVertical;
 import org.datatransferproject.spi.transfer.extension.TransferExtension;
 import org.datatransferproject.spi.transfer.provider.Exporter;
 import org.datatransferproject.spi.transfer.provider.Importer;
+
+import static org.datatransferproject.types.common.models.DataVertical.*;
 
 public class BackblazeTransferExtension implements TransferExtension {
   public static final String SERVICE_ID = "Backblaze";
@@ -56,7 +57,7 @@ public class BackblazeTransferExtension implements TransferExtension {
   @Override
   public Importer<?, ?> getImporter(DataVertical transferDataType) {
     Preconditions.checkArgument(
-        initialized, "Trying to call getImporter before initalizing BackblazeTransferExtension");
+        initialized, "Trying to call getImporter before initializing BackblazeTransferExtension");
     Preconditions.checkArgument(
         SUPPORTED_TYPES.contains(transferDataType),
         "Import of " + transferDataType + " not supported by Backblaze");
@@ -82,11 +83,23 @@ public class BackblazeTransferExtension implements TransferExtension {
     importerBuilder.put(
             PHOTOS,
             new BackblazePhotosImporter(
-                    monitor, jobStore, isProvider, backblazeDataTransferClientFactory));
+                    monitor, jobStore, isProvider, backblazeDataTransferClientFactory,
+                    BackblazeConstants.PHOTOS_BASE_FOLDER_NAME));
     importerBuilder.put(
             VIDEOS,
             new BackblazeVideosImporter(
-                    monitor, jobStore, isProvider, backblazeDataTransferClientFactory));
+                    monitor, jobStore, isProvider, backblazeDataTransferClientFactory,
+                    BackblazeConstants.VIDEOS_BASE_FOLDER_NAME));
+    importerBuilder.put(MEDIA,
+            new MediaImporterDecorator<>(
+                    new BackblazePhotosImporter(
+                            monitor, jobStore, isProvider, backblazeDataTransferClientFactory,
+                            BackblazeConstants.MEDIA_BASE_FOLDER_NAME),
+                    new BackblazeVideosImporter(
+                            monitor, jobStore, isProvider, backblazeDataTransferClientFactory,
+                            BackblazeConstants.MEDIA_BASE_FOLDER_NAME))
+            );
+
     importerMap = importerBuilder.build();
     initialized = true;
   }

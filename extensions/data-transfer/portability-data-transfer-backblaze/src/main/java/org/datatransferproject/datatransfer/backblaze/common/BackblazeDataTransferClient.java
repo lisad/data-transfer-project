@@ -20,21 +20,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.datatransferproject.api.launcher.Monitor;
 import org.datatransferproject.datatransfer.backblaze.exception.BackblazeCredentialsException;
-import org.datatransferproject.transfer.JobMetadata;
-import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException;
@@ -64,6 +60,7 @@ public class BackblazeDataTransferClient {
   private final long partSizeForMultiPartUpload;
   private final BackblazeS3ClientFactory backblazeS3ClientFactory;
   private final Monitor monitor;
+  private final DateFormat dateFormatter;
   private S3Client s3Client;
   private String bucketName;
 
@@ -79,6 +76,9 @@ public class BackblazeDataTransferClient {
       throw new IllegalArgumentException("Part size for multipart upload must be positive.");
     this.sizeThresholdForMultipartUpload = sizeThresholdForMultipartUpload;
     this.partSizeForMultiPartUpload = partSizeForMultiPartUpload;
+
+    dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+    dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
   }
 
   public void init(String keyId, String applicationKey, String exportService)
@@ -125,7 +125,7 @@ public class BackblazeDataTransferClient {
     bucketName = getOrCreateBucket(s3Client, listBucketsResponse, userRegion, exportService);
   }
 
-  public String uploadFile(String fileKey, File file) throws IOException {
+  public String uploadFile(String fileKey, File file, Date createdTime) throws IOException {
     if (s3Client == null || bucketName == null) {
       throw new IllegalStateException("BackblazeDataTransferClient has not been initialised");
     }
@@ -144,8 +144,12 @@ public class BackblazeDataTransferClient {
         return uploadFileUsingMultipartUpload(fileKey, file, contentLength);
       }
 
+      String createdTimeIso = dateFormatter.format(createdTime);
+
       PutObjectRequest putObjectRequest =
-          PutObjectRequest.builder().bucket(bucketName).key(fileKey).build();
+          PutObjectRequest.builder().bucket(bucketName).key(fileKey)
+                  .metadata(ImmutableMap.of("created_time", createdTimeIso))
+                  .build();
 
       PutObjectResponse putObjectResponse =
           s3Client.putObject(putObjectRequest, RequestBody.fromFile(file));
