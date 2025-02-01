@@ -35,6 +35,7 @@ Before getting started you will need a [Google Cloud developer account](https://
  - Enable the Google Photos API and request an OAuth 2.0 client ID by following the [getting started guide](https://developers.google.com/photos/library/guides/get-started).
  - Choose which [authorization scopes](https://developers.google.com/photos/library/guides/authentication-authorization) your application will need. You can see the required scopes in the [GoogleOauthConfig](https://github.com/google/data-transfer-project/blob/master/extensions/auth/portability-auth-google/src/main/java/org/datatransferproject/auth/google/GoogleOAuthConfig.java#L51-L77).
  - Initially, your application will show an "Unverified app" message until it is [verified](https://support.google.com/cloud/answer/7454865) and you will have limited [API](https://developers.google.com/photos/library/guides/api-limits-quotas) and [OAuth](https://console.developers.google.com/apis/credentials/consent) quota
+ - Your callback needs to be set to `https://<yourdomain>/callback/google`, even if that domain is `localhost`
  - We recommend you review the [UX Guidelines](https://developers.google.com/photos/library/guides/ux-guidelines) and [Acceptable use policy](https://developers.google.com/photos/library/guides/acceptable-use)  while designing your app if you want to eventually get increased quota through the Google Photos Partner Program.
 
 #### Launching to Production

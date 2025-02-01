@@ -16,6 +16,8 @@ cases are working.
 
 Apply for a key at [https://api.imgur.com/oauth2/addclient](https://api.imgur.com/oauth2/addclient)
 
+Your callback needs to be set to `https://<yourdomain>/callback/imgur`, even if that domain is `localhost`
+
 Imgur uses OAuth 2.0 for authorization.
 
 ## Maintained By
