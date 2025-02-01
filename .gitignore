@@ -21,7 +21,7 @@ target/
 /dist
 /tmp
 /out-tsc
-
+bin/
 node_modules
 
 # IDEs and editors
