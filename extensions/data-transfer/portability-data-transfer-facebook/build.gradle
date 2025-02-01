@@ -24,7 +24,7 @@ dependencies {
     compile project(":portability-spi-transfer")
 
     compile("com.restfb:restfb:2.14.0")
-    compile("commons-io:commons-io:2.6")
+    compile("commons-io:commons-io:2.7")
     compile("org.apache.commons:commons-imaging:1.0-alpha1")
 }
 
