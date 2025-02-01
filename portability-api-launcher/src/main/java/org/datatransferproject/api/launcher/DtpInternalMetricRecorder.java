@@ -15,8 +15,9 @@
  */
 package org.datatransferproject.api.launcher;
 
-import java.time.Duration;
 import org.datatransferproject.types.common.models.DataVertical;
+
+import java.time.Duration;
 
 /**
  * Interface to log metrics about a DTP job.
@@ -28,47 +29,70 @@ import org.datatransferproject.types.common.models.DataVertical;
  * platform.
  */
 public interface DtpInternalMetricRecorder {
-  // Metrics related to DTP internals
+    // Metrics related to DTP internals
 
-  /** A DTP job started. **/
-  void startedJob(DataVertical dataType, String exportService, String importService);
-  /** A DTP job finished **/
-  void finishedJob(
-      DataVertical dataType,
-      String exportService,
-      String importService,
-      boolean success,
-      Duration duration);
-  /** A DTP job cancelled **/
-  void cancelledJob(
-      DataVertical dataType,
-      String exportService,
-      String importService,
-      Duration duration);
+    /**
+     * A DTP job started.
+     **/
+    void startedJob(DataVertical dataType, String exportService, String importService);
 
-  /** An single attempt to export a page of data finished. **/
-  void exportPageAttemptFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration);
+    /**
+     * A DTP job finished
+     **/
+    void finishedJob(
+            DataVertical dataType,
+            String exportService,
+            String importService,
+            boolean success,
+            Duration duration);
 
-  /** An attempt to export a page of data finished including all retires. **/
-  void exportPageFinished(DataVertical dataType, String service, boolean success, Duration duration);
+    /**
+     * A DTP job cancelled
+     **/
+    void cancelledJob(
+            DataVertical dataType,
+            String exportService,
+            String importService,
+            Duration duration);
 
-  /** An single attempt to import a page of data finished. **/
-  void importPageAttemptFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration);
+    /**
+     * An single attempt to export a page of data finished.
+     *
+     * @param serviceResult The ServiceResult object
+     */
+    void exportPageAttemptFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult);
 
-  /** An attempt to import a page of data finished including all retires. **/
-  void importPageFinished(DataVertical dataType, String service, boolean success, Duration duration);
+    /**
+     * An attempt to export a page of data finished including all retires.
+     *
+     * @param serviceResult The ServiceResult object
+     */
+    void exportPageFinished(DataVertical dataType, ServiceResult serviceResult);
 
-  // Metrics from {@link MetricRecorder}
-  void recordGenericMetric(DataVertical dataType, String service, String tag);
-  void recordGenericMetric(DataVertical dataType, String service, String tag, boolean bool);
-  void recordGenericMetric(DataVertical dataType, String service, String tag, Duration duration);
-  void recordGenericMetric(DataVertical dataType, String service, String tag, int value);
+    /**
+     * An single attempt to import a page of data finished.
+     *
+     * @param serviceResult The ServiceResult object
+     */
+    void importPageAttemptFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult);
+
+    /**
+     * An attempt to import a page of data finished including all retires.
+     *
+     * @param serviceResult The ServiceResult object
+     **/
+    void importPageFinished(DataVertical dataType, ServiceResult serviceResult);
+
+    // Metrics from {@link MetricRecorder}
+    void recordGenericMetric(DataVertical dataType, String service, String tag);
+
+    void recordGenericMetric(DataVertical dataType, String service, String tag, boolean bool);
+
+    void recordGenericMetric(DataVertical dataType, String service, String tag, Duration duration);
+
+    void recordGenericMetric(DataVertical dataType, String service, String tag, int value);
 }

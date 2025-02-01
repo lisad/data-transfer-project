@@ -19,6 +19,7 @@ package org.datatransferproject.transfer;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Provider;
 import org.datatransferproject.api.launcher.DtpInternalMetricRecorder;
+import org.datatransferproject.api.launcher.ServiceResult;
 import org.datatransferproject.spi.transfer.provider.ExportResult;
 import org.datatransferproject.spi.transfer.provider.Exporter;
 import org.datatransferproject.types.common.ExportInformation;
@@ -35,39 +36,40 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class CallableExporter implements Callable<ExportResult> {
 
-  private Provider<Exporter> exporterProvider;
-  private UUID jobId;
-  private AuthData authData;
-  private Optional<ExportInformation> exportInformation;
-  private final DtpInternalMetricRecorder metricRecorder;
+    private Provider<Exporter> exporterProvider;
+    private UUID jobId;
+    private AuthData authData;
+    private Optional<ExportInformation> exportInformation;
+    private final DtpInternalMetricRecorder metricRecorder;
 
-  public CallableExporter(
-      Provider<Exporter> exporterProvider,
-      UUID jobId,
-      AuthData authData,
-      Optional<ExportInformation> exportInformation,
-      DtpInternalMetricRecorder metricRecorder) {
-    this.exporterProvider = checkNotNull(exporterProvider, "exportProvider can't be null");
-    this.jobId = checkNotNull(jobId, "jobId can't be null");
-    this.authData = checkNotNull(authData, "authData can't be null");
-    this.exportInformation = exportInformation;
-    this.metricRecorder = checkNotNull(metricRecorder, "metric recorder can't be null");
-  }
-
-  @Override
-  public ExportResult call() throws Exception {
-    boolean success = false;
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    try {
-      ExportResult result =  exporterProvider.get().export(jobId, authData, exportInformation);
-      success = result.getType() != ExportResult.ResultType.ERROR;
-      return result;
-    } finally{
-      metricRecorder.exportPageAttemptFinished(
-          JobMetadata.getDataType(),
-          JobMetadata.getExportService(),
-          success,
-          stopwatch.elapsed());
+    public CallableExporter(
+            Provider<Exporter> exporterProvider,
+            UUID jobId,
+            AuthData authData,
+            Optional<ExportInformation> exportInformation,
+            DtpInternalMetricRecorder metricRecorder) {
+        this.exporterProvider = checkNotNull(exporterProvider, "exportProvider can't be null");
+        this.jobId = checkNotNull(jobId, "jobId can't be null");
+        this.authData = checkNotNull(authData, "authData can't be null");
+        this.exportInformation = exportInformation;
+        this.metricRecorder = checkNotNull(metricRecorder, "metric recorder can't be null");
     }
-  }
+
+    @Override
+    public ExportResult call() throws Exception {
+        boolean success = false;
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        try {
+            ExportResult result = exporterProvider.get().export(jobId, authData, exportInformation);
+            success = result.getType() != ExportResult.ResultType.ERROR;
+            return result;
+        } finally {
+            metricRecorder.exportPageAttemptFinished(
+                    JobMetadata.getDataType(), new ServiceResult(
+                            JobMetadata.getExportService(),
+                            success,
+                            stopwatch.elapsed())
+            );
+        }
+    }
 }

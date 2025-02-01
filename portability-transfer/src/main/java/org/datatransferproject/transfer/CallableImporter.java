@@ -19,6 +19,7 @@ package org.datatransferproject.transfer;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Provider;
 import org.datatransferproject.api.launcher.DtpInternalMetricRecorder;
+import org.datatransferproject.api.launcher.ServiceResult;
 import org.datatransferproject.spi.transfer.idempotentexecutor.IdempotentImportExecutor;
 import org.datatransferproject.spi.transfer.provider.ImportResult;
 import org.datatransferproject.spi.transfer.provider.Importer;
@@ -36,55 +37,56 @@ import java.util.concurrent.Callable;
  */
 public class CallableImporter implements Callable<ImportResult> {
 
-  private final Provider<Importer> importerProvider;
-  private final UUID jobId;
-  private final IdempotentImportExecutor idempotentImportExecutor;
-  private final AuthData authData;
-  private final DataModel data;
-  private final DtpInternalMetricRecorder metricRecorder;
+    private final Provider<Importer> importerProvider;
+    private final UUID jobId;
+    private final IdempotentImportExecutor idempotentImportExecutor;
+    private final AuthData authData;
+    private final DataModel data;
+    private final DtpInternalMetricRecorder metricRecorder;
 
-  public CallableImporter(
-      Provider<Importer> importerProvider,
-      UUID jobId,
-      IdempotentImportExecutor idempotentImportExecutor,
-      AuthData authData,
-      DataModel data,
-      DtpInternalMetricRecorder metricRecorder) {
-    this.importerProvider = importerProvider;
-    this.jobId = jobId;
-    this.idempotentImportExecutor = idempotentImportExecutor;
-    this.authData = authData;
-    this.data = data;
-    this.metricRecorder = metricRecorder;
-  }
-
-  @Override
-  public ImportResult call() throws Exception {
-    boolean success = false;
-    Stopwatch stopwatch = Stopwatch.createStarted();
-    try {
-      idempotentImportExecutor.resetRecentErrors();
-      ImportResult result = importerProvider.get()
-          .importItem(jobId, idempotentImportExecutor, authData, data);
-
-      Collection<ErrorDetail> errors = idempotentImportExecutor.getRecentErrors();
-      success = result.getType() == ImportResult.ResultType.OK && errors.isEmpty();
-
-      if (!success && errors.iterator().hasNext() && !errors.iterator().next().canSkip()) {
-        throw new IOException(
-            "Problem with importer, forcing a retry, "
-                + "first error: "
-                + (errors.iterator().hasNext() ? errors.iterator().next().exception() : "none"));
-      }
-
-      result = result.copyWithCounts(data.getCounts());
-      return result;
-    } finally{
-      metricRecorder.importPageAttemptFinished(
-          JobMetadata.getDataType(),
-          JobMetadata.getImportService(),
-          success,
-          stopwatch.elapsed());
+    public CallableImporter(
+            Provider<Importer> importerProvider,
+            UUID jobId,
+            IdempotentImportExecutor idempotentImportExecutor,
+            AuthData authData,
+            DataModel data,
+            DtpInternalMetricRecorder metricRecorder) {
+        this.importerProvider = importerProvider;
+        this.jobId = jobId;
+        this.idempotentImportExecutor = idempotentImportExecutor;
+        this.authData = authData;
+        this.data = data;
+        this.metricRecorder = metricRecorder;
     }
-  }
+
+    @Override
+    public ImportResult call() throws Exception {
+        boolean success = false;
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        try {
+            idempotentImportExecutor.resetRecentErrors();
+            ImportResult result = importerProvider.get()
+                    .importItem(jobId, idempotentImportExecutor, authData, data);
+
+            Collection<ErrorDetail> errors = idempotentImportExecutor.getRecentErrors();
+            success = result.getType() == ImportResult.ResultType.OK && errors.isEmpty();
+
+            if (!success && errors.iterator().hasNext() && !errors.iterator().next().canSkip()) {
+                throw new IOException(
+                        "Problem with importer, forcing a retry, "
+                                + "first error: "
+                                + (errors.iterator().hasNext() ? errors.iterator().next().exception() : "none"));
+            }
+
+            result = result.copyWithCounts(data.getCounts());
+            return result;
+        } finally {
+            metricRecorder.importPageAttemptFinished(
+                    JobMetadata.getDataType(), new ServiceResult(
+                            JobMetadata.getImportService(),
+                            success,
+                            stopwatch.elapsed())
+            );
+        }
+    }
 }

@@ -15,143 +15,136 @@
  */
 package org.datatransferproject.cloud.microsoft.cosmos;
 
-import static java.lang.String.format;
-
 import org.datatransferproject.api.launcher.DtpInternalMetricRecorder;
 import org.datatransferproject.api.launcher.Monitor;
+import org.datatransferproject.api.launcher.ServiceResult;
+import org.datatransferproject.types.common.models.DataVertical;
 
 import java.time.Duration;
-import org.datatransferproject.types.common.models.DataVertical;
+
+import static java.lang.String.format;
 
 /**
  * A placeholder {@link DtpInternalMetricRecorder} that simply logs metrics
  * to the default monitor.
- * **/
+ **/
 class AzureDtpInternalMetricRecorder implements DtpInternalMetricRecorder {
-  private final Monitor monitor;
+    private final Monitor monitor;
 
-  // TODO: Replace with a Azure Monitor based implementation.
-  AzureDtpInternalMetricRecorder(Monitor monitor) {
-    this.monitor = monitor;
-  }
+    // TODO: Replace with a Azure Monitor based implementation.
+    AzureDtpInternalMetricRecorder(Monitor monitor) {
+        this.monitor = monitor;
+    }
 
-  @Override
-  public void startedJob(DataVertical dataType, String exportService, String importService) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: StartedJob, data type: %s, from: %s, to: %s",
-                dataType, exportService, importService));
-  }
+    @Override
+    public void startedJob(DataVertical dataType, String exportService, String importService) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: StartedJob, data type: %s, from: %s, to: %s",
+                                dataType, exportService, importService));
+    }
 
-  @Override
-  public void exportPageAttemptFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: exportPageAttemptFinished, data type: %s, service: %s, "
-                    + "success: %s, duration: %s",
-                dataType, service, success, duration));
-  }
+    @Override
+    public void exportPageAttemptFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: exportPageAttemptFinished, data type: %s, service: %s, "
+                                        + "success: %s, duration: %s",
+                                dataType, serviceResult.getService(), serviceResult.getSuccess(), serviceResult.getDuration()));
+    }
 
-  @Override
-  public void exportPageFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: exportPageFinished, data type: %s, service: %s, success: %s, duration: %s",
-                dataType, service, success, duration));
-  }
+    @Override
+    public void exportPageFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: exportPageFinished, data type: %s, service: %s, success: %s, duration: %s",
+                                dataType, serviceResult.getService(), serviceResult.getSuccess(), serviceResult.getDuration()));
+    }
 
-  @Override
-  public void importPageAttemptFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: importPageAttemptFinished, data type: %s, service: %s,"
-                    + "success: %s, duration: %s",
-                dataType, service, success, duration));
-  }
+    @Override
+    public void importPageAttemptFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: importPageAttemptFinished, data type: %s, service: %s,"
+                                        + "success: %s, duration: %s",
+                                dataType, serviceResult.getService(), serviceResult.getSuccess(), serviceResult.getDuration()));
+    }
 
-  @Override
-  public void importPageFinished(
-      DataVertical dataType,
-      String service,
-      boolean success,
-      Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: importPageFinished, data type: %s, service: %s, success: %s, duration: %s",
-                dataType, service, success, duration));
-  }
+    @Override
+    public void importPageFinished(
+            DataVertical dataType,
+            ServiceResult serviceResult) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: importPageFinished, data type: %s, service: %s, success: %s, duration: %s",
+                                dataType, serviceResult.getService(), serviceResult.getSuccess(), serviceResult.getDuration()));
+    }
 
-  @Override
-  public void finishedJob(
-      DataVertical dataType,
-      String exportService,
-      String importService,
-      boolean success,
-      Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: finishedJob, data type: %s, from: %s, to: %s, success: %s, duration: %s",
-                dataType, exportService, importService, success, duration));
-  }
+    @Override
+    public void finishedJob(
+            DataVertical dataType,
+            String exportService,
+            String importService,
+            boolean success,
+            Duration duration) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: finishedJob, data type: %s, from: %s, to: %s, success: %s, duration: %s",
+                                dataType, exportService, importService, success, duration));
+    }
 
-  @Override
-  public void cancelledJob(DataVertical dataType, String exportService, String importService, Duration duration) {
-    monitor.debug(
-         () ->
-             format("Metric: cancelledJob, data type: %s, from: %s, to: %s, duration: %s",
-                    dataType, exportService, importService, duration));
+    @Override
+    public void cancelledJob(DataVertical dataType, String exportService, String importService, Duration duration) {
+        monitor.debug(
+                () ->
+                        format("Metric: cancelledJob, data type: %s, from: %s, to: %s, duration: %s",
+                                dataType, exportService, importService, duration));
 
-  }
+    }
 
-  @Override
-  public void recordGenericMetric(DataVertical dataType, String service, String tag) {
-    monitor.debug(
-        () ->
-            format("Metric: Generic, data type: %s, service: %s, tag: %s", dataType, service, tag));
-  }
+    @Override
+    public void recordGenericMetric(DataVertical dataType, String service, String tag) {
+        monitor.debug(
+                () ->
+                        format("Metric: Generic, data type: %s, service: %s, tag: %s", dataType, service, tag));
+    }
 
-  @Override
-  public void recordGenericMetric(DataVertical dataType, String service, String tag, boolean bool) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: Generic, data type: %s, service: %s, tag: %s, value: %s",
-                dataType, service, tag, bool));
-  }
+    @Override
+    public void recordGenericMetric(DataVertical dataType, String service, String tag, boolean bool) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: Generic, data type: %s, service: %s, tag: %s, value: %s",
+                                dataType, service, tag, bool));
+    }
 
-  @Override
-  public void recordGenericMetric(DataVertical dataType, String service, String tag, Duration duration) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: Generic, data type: %s, service: %s, tag: %s, duration: %s",
-                dataType, service, tag, duration));
-  }
+    @Override
+    public void recordGenericMetric(DataVertical dataType, String service, String tag, Duration duration) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: Generic, data type: %s, service: %s, tag: %s, duration: %s",
+                                dataType, service, tag, duration));
+    }
 
-  @Override
-  public void recordGenericMetric(DataVertical dataType, String service, String tag, int value) {
-    monitor.debug(
-        () ->
-            format(
-                "Metric: Generic, data type: %s, service: %s, tag: %s, value: %s",
-                dataType, service, tag, value));
-  }
+    @Override
+    public void recordGenericMetric(DataVertical dataType, String service, String tag, int value) {
+        monitor.debug(
+                () ->
+                        format(
+                                "Metric: Generic, data type: %s, service: %s, tag: %s, value: %s",
+                                dataType, service, tag, value));
+    }
 }
