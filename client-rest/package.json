@@ -15,7 +15,7 @@
     "@angular/animations": "11.2.14",
     "@angular/common": "11.2.14",
     "@angular/compiler": "11.2.14",
-    "@angular/core": "11.2.14",
+    "@angular/core": "12.0.0",
     "@angular/forms": "11.2.14",
     "@angular/platform-browser": "11.2.14",
     "@angular/platform-browser-dynamic": "11.2.14",
@@ -27,7 +27,7 @@
     "zone.js": "0.11.6"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "0.1102.13",
+    "@angular-devkit/build-angular": "18.1.4",
     "@angular/cli": "11.2.14",
     "@angular/compiler-cli": "11.2.14",
     "@angular/language-service": "11.2.14",
