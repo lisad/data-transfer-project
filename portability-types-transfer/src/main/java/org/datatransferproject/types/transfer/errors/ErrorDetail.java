@@ -19,10 +19,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Map;
 
 /**
  * Details about errors that happened during the transfer.
