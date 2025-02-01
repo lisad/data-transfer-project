@@ -33,6 +33,8 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.http.json.JsonHttpContent;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.ArrayMap;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
@@ -187,13 +189,13 @@ public class GooglePhotosInterface {
   public BatchMediaItemResponse createPhotos(NewMediaItemUpload newMediaItemUpload)
       throws IOException, InvalidTokenException, PermissionDeniedException, UploadErrorException {
     HashMap<String, Object> map = createJsonMap(newMediaItemUpload);
-    HttpContent httpContent = new JsonHttpContent(this.jsonFactory, map);
+    HttpContent httpContent = new JsonHttpContent(jsonFactory, map);
 
     return makePostRequest(BASE_URL + "mediaItems:batchCreate", Optional.empty(), Optional.empty(),
         httpContent, BatchMediaItemResponse.class);
   }
-
-  private <T> T makeGetRequest(String url, Optional<Map<String, String>> parameters, Class<T> clazz)
+  @VisibleForTesting
+  <T> T makeGetRequest(String url, Optional<Map<String, String>> parameters, Class<T> clazz)
       throws IOException, InvalidTokenException, PermissionDeniedException {
     HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
     HttpRequest getRequest =
