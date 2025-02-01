@@ -17,9 +17,10 @@
 package org.datatransferproject.copier.stack;
 
 import com.google.inject.Provider;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
@@ -40,12 +41,14 @@ import org.datatransferproject.types.common.models.ContainerResource;
 import org.datatransferproject.types.transfer.auth.AuthData;
 import org.datatransferproject.types.transfer.retry.RetryStrategyLibrary;
 
-/** Implementation of {@link InMemoryDataCopier}. */
+/**
+ * Implementation of {@link InMemoryDataCopier}.
+ */
 public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMemoryDataCopier {
 
   private static final AtomicInteger COPY_ITERATION_COUNTER = new AtomicInteger();
 
-  private Stack<ExportInformation> exportInfoStack = new Stack<>();
+  private Deque<ExportInformation> exportInfoStack = new ArrayDeque<>();
 
   @Inject
   public PortabilityStackInMemoryDataCopier(
@@ -81,7 +84,7 @@ public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMem
    *
    * @param exportAuthData The auth data for the export
    * @param importAuthData The auth data for the import
-   * @param exportInfo Any pagination or resource information to use for subsequent calls.
+   * @param exportInfo     Any pagination or resource information to use for subsequent calls.
    */
   @Override
   public void copy(
@@ -93,46 +96,39 @@ public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMem
     idempotentImportExecutor.setJobId(jobId);
     String jobIdPrefix = "Job " + jobId + ": ";
 
-    Optional<Stack<ExportInformation>> maybeLoadedStack = jobStore.loadJobStack(jobId);
+    Optional<Deque<ExportInformation>> maybeLoadedStack = jobStore.loadJobStack(jobId);
 
     if (maybeLoadedStack.isPresent()) {
       // load stack from partially completed transfer
       exportInfoStack = maybeLoadedStack.get();
     } else {
-      // start new transfer
-      int initialCopyIteration = COPY_ITERATION_COUNTER.incrementAndGet();
-      ExportResult<?> initialExportResult =
-          copyIteration(
-              jobId, exportAuthData, importAuthData, exportInfo, jobIdPrefix, initialCopyIteration);
-      // Import and Export were successful, determine what to do next
-      ContainerResource exportContainerResource =
-          exportInfo.map(ExportInformation::getContainerResource).orElse(null);
-      updateStackAfterCopyIteration(
-          jobId,
-          jobIdPrefix,
-          exportContainerResource,
-          initialCopyIteration,
-          initialExportResult.getContinuationData());
+      copyAndUpdateStack(exportAuthData, importAuthData, jobId, jobIdPrefix, exportInfo);
     }
+
     while (!exportInfoStack.isEmpty()) {
-      int copyIteration = COPY_ITERATION_COUNTER.incrementAndGet();
-      ExportInformation currentExportInfo = exportInfoStack.pop();
-      ExportResult<?> exportResult =
-          copyIteration(
-              jobId,
-              exportAuthData,
-              importAuthData,
-              Optional.of(currentExportInfo),
-              jobIdPrefix,
-              copyIteration);
-      // Import and Export were successful, determine what to do next
-      updateStackAfterCopyIteration(
-          jobId,
-          jobIdPrefix,
-          currentExportInfo.getContainerResource(),
-          copyIteration,
-          exportResult.getContinuationData());
+      Optional<ExportInformation> nextInfo = Optional.of(exportInfoStack.removeLast());
+      copyAndUpdateStack(exportAuthData, importAuthData, jobId, jobIdPrefix, nextInfo);
     }
+  }
+
+  private void copyAndUpdateStack(AuthData exportAuthData, AuthData importAuthData, UUID jobId,
+      String jobIdPrefix, Optional<ExportInformation> exportInfo) throws CopyException {
+    int copyIteration = COPY_ITERATION_COUNTER.incrementAndGet();
+    ExportResult<?> exportResult =
+        copyIteration(
+            jobId,
+            exportAuthData,
+            importAuthData,
+            exportInfo,
+            jobIdPrefix,
+            copyIteration);
+    // Import and Export were successful, determine what to do next
+    updateStackAfterCopyIteration(
+        jobId,
+        jobIdPrefix,
+        exportInfo.map(ExportInformation::getContainerResource).orElse(null),
+        copyIteration,
+        exportResult.getContinuationData());
   }
 
   private void updateStackAfterCopyIteration(
@@ -147,8 +143,7 @@ public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMem
 
     if (null != continuationData) {
       // Start processing sub-resources
-      if (continuationData.getContainerResources() != null
-          && !continuationData.getContainerResources().isEmpty()) {
+      if (continuationData.getContainerResources() != null) {
         List<ContainerResource> subResources = continuationData.getContainerResources();
         for (int i = subResources.size() - 1; i >= 0; i--) {
           monitor.debug(
@@ -156,7 +151,7 @@ public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMem
                   jobIdPrefix
                       + "Pushing to the stack a new copy iteration with a new container resource, copy iteration: "
                       + copyIteration);
-          exportInfoStack.push((new ExportInformation(null, subResources.get(i))));
+          exportInfoStack.addLast((new ExportInformation(null, subResources.get(i))));
         }
       }
 
@@ -167,10 +162,10 @@ public class PortabilityStackInMemoryDataCopier extends PortabilityAbstractInMem
                 jobIdPrefix
                     + "Pushing to the stack a new copy iteration with pagination info, copy iteration: "
                     + copyIteration);
-        exportInfoStack.push(
+        exportInfoStack.addLast(
             new ExportInformation(continuationData.getPaginationData(), exportContainerResource));
       }
     }
-    jobStore.storeJobStack(jobId, (Stack<ExportInformation>) exportInfoStack.clone());
+    jobStore.storeJobStack(jobId, new ArrayDeque<>(exportInfoStack));
   }
 }

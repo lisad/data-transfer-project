@@ -16,11 +16,16 @@
 
 package org.datatransferproject.transfer.copier;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.UUID;
 import org.datatransferproject.api.launcher.Monitor;
 import org.datatransferproject.copier.stack.PortabilityStackInMemoryDataCopier;
@@ -426,10 +431,10 @@ public class PortabilityInMemoryDataCopierTest {
     ExportInformation subResource1ExportInfo = new ExportInformation(null, subResource1);
     ExportInformation subResource2ExportInfo = new ExportInformation(null, subResource2);
 
-    Stack<ExportInformation> jobStack = new Stack<>();
-    jobStack.push(subResource2ExportInfo);
-    jobStack.push(subResource1ExportInfo);
-    jobStack.push(paginationExportInfo);
+    Deque<ExportInformation> jobStack = new ArrayDeque<>();
+    jobStack.addLast(subResource2ExportInfo);
+    jobStack.addLast(subResource1ExportInfo);
+    jobStack.addLast(paginationExportInfo);
 
     Mockito.when(continuationData.getPaginationData()).thenReturn(paginationData);
     Mockito.when(continuationData.getContainerResources())
@@ -443,13 +448,17 @@ public class PortabilityInMemoryDataCopierTest {
     stackInMemoryDataCopier.copy(exportAuthData, importAuthData, jobId, Optional.of(exportInfo));
 
     InOrder orderVerifier = Mockito.inOrder(stackInMemoryDataCopier.jobStore);
-    orderVerifier.verify(stackInMemoryDataCopier.jobStore).storeJobStack(jobId, jobStack);
-    jobStack.pop();
-    orderVerifier.verify(stackInMemoryDataCopier.jobStore).storeJobStack(jobId, jobStack);
-    jobStack.pop();
-    orderVerifier.verify(stackInMemoryDataCopier.jobStore).storeJobStack(jobId, jobStack);
-    jobStack.pop();
-    orderVerifier.verify(stackInMemoryDataCopier.jobStore).storeJobStack(jobId, jobStack);
+    while (!jobStack.isEmpty()) {
+      orderVerifier.verify(stackInMemoryDataCopier.jobStore)
+          .storeJobStack(eq(jobId), argThat(s -> dequeEquals(s, jobStack)));
+      jobStack.removeLast();
+    }
+    orderVerifier.verify(stackInMemoryDataCopier.jobStore)
+        .storeJobStack(eq(jobId), argThat(Collection::isEmpty));
+  }
+
+  private boolean dequeEquals(Deque<ExportInformation> d1, Deque<ExportInformation> d2) {
+    return Arrays.equals(d1.toArray(), d2.toArray());
   }
 
   @Test
@@ -457,7 +466,7 @@ public class PortabilityInMemoryDataCopierTest {
       throws CopyException, IOException {
 
     Mockito.when(stackInMemoryDataCopier.jobStore.loadJobStack(jobId))
-        .thenReturn(Optional.of(new Stack<ExportInformation>()));
+        .thenReturn(Optional.of(new ArrayDeque<>()));
 
     stackInMemoryDataCopier.copy(exportAuthData, importAuthData, jobId, Optional.of(exportInfo));
 
