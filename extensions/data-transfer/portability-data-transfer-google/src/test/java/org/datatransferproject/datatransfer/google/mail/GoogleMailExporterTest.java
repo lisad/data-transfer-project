@@ -92,15 +92,13 @@ public class GoogleMailExporterTest {
     when(gmail.users()).thenReturn(users);
     when(users.messages()).thenReturn(messages);
     when(messages.list(anyString())).thenReturn(messageListRequest);
-    when(messageListRequest.setMaxResults(anyLong())).thenReturn(messageListRequest);
-    when(messages.get(anyString(), anyString())).thenReturn(get);
-    when(get.setFormat(anyString())).thenReturn(get);
 
     verifyNoInteractions(googleCredentialFactory);
   }
 
   @Test
   public void exportMessagesFirstSet() throws IOException {
+    additionalSetup();
     setUpSingleMessageResponse();
 
     // Looking at first page, with at least one page after it
@@ -136,9 +134,23 @@ public class GoogleMailExporterTest {
         actualMail.stream().map(MailMessageModel::getContainerIds).collect(Collectors.toList()))
         .containsExactly(MESSAGE_LABELS);
   }
+  @Test
+  public void errorTest() throws IOException{
+    when(gmail.users()).thenReturn(users);
+    when(users.messages()).thenReturn(messages);
+    when(messages.list(anyString())).thenThrow(new IOException());
+    ExportResult<MailContainerResource> result =
+            googleMailExporter.export(JOB_ID, null, Optional.empty());
+  }
 
+  public void additionalSetup() throws IOException{
+    when(messageListRequest.setMaxResults(anyLong())).thenReturn(messageListRequest);
+    when(messages.get(anyString(), anyString())).thenReturn(get);
+    when(get.setFormat(anyString())).thenReturn(get);
+  }
   @Test
   public void exportMessagesSubsequentSet() throws IOException {
+    additionalSetup();
     setUpSingleMessageResponse();
 
     // Looking at subsequent page, with no page after it
