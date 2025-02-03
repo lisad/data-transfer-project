@@ -165,11 +165,17 @@ def configurePublication(Project project) {
                 beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
                 repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                    authentication(userName: project.hasProperty('ossrhUsername') ? ossrhUsername : '', password: project.hasProperty('ossrhPassword') ? ossrhPassword : '')
+                    authentication(
+                      userName: project.hasProperty('ossrhUsername') ? ossrhUsername : System.getenv('OSSRH_USERNAME'),
+                      password: project.hasProperty('ossrhPassword') ? ossrhPassword : System.getenv('OSSRH_PASSWORD')
+                    )
                 }
 
                 snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                    authentication(userName: project.hasProperty('ossrhUsername') ? ossrhUsername : '', password: project.hasProperty('ossrhPassword') ? ossrhPassword : '')
+                    authentication(
+                      userName: project.hasProperty('ossrhUsername') ? ossrhUsername : System.getenv('OSSRH_USERNAME'),
+                      password: project.hasProperty('ossrhPassword') ? ossrhPassword : System.getenv('OSSRH_PASSWORD')
+                    )
                 }
 
                 pom.project {
@@ -206,6 +212,14 @@ def configurePublication(Project project) {
 
     if (project.hasProperty("signing.keyId")) {
         project.signing {
+            sign project.configurations.archives
+        }
+    } else if (System.getenv("GRADLE_SIGNING_KEY")) {
+        // For use in CI
+        project.signing {
+            def signingKey = System.getenv('GRADLE_SIGNING_KEY')
+            def signingPassword = System.getenv('GRADLE_SIGNING_PASSWORD')
+            useInMemoryPgpKeys(signingKey, signingPassword)
             sign project.configurations.archives
         }
     }

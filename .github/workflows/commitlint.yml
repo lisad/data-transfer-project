@@ -14,4 +14,4 @@ jobs:
       - name: "Lint the PR title"
         env:
           TITLE: ${{ github.event.pull_request.title }}
-        run: echo "${TITLE}" | cz check
+        run: cz check --message "${TITLE}" || { echo "see https://github.com/dtinit/data-transfer-project/blob/master/Documentation/Publishing.md#semantic-versioning-and-conventional-commits" >&2; exit 1; }

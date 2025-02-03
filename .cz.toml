@@ -1,0 +1,10 @@
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "semver"
+version_provider = "scm"
+update_changelog_on_bump = true
+version_files = [
+  "gradle.properties:projectVersion="
+]
+changelog_start_rev = "v1.0.0"
